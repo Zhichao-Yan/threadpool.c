@@ -1,12 +1,17 @@
-#include "pool.h"
-#include "task.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "pool.h"
+#include "task.h"
+
+typedef struct {
+    int id;
+    char name[50];
+}product;
 
 void* func(void* arg)
 {
-    int id = *((int*)arg);
-    printf("处理第%d个任务\n",id);
+    product *p = (product*)arg;
+    printf("处理来自%s的第%d个任务\n",p->name,p->id);
     free(arg); // 任务执行完成，释放堆分配的内存
     return NULL;
 }
@@ -19,16 +24,15 @@ void* Factory(void* arg) // 生产产品的厂家
     while(1)
     {
         task t;
-        int *id = (int*)malloc(sizeof(int));  // arg通常指向堆内存
-        *id = ++i;
-        t.arg = id; 
+        product *p = (product*)malloc(sizeof(product));  // arg通常指向堆内存
+        p->id = ++i;
+        sprintf(p->name,"生产线程0x%x",pthread_self());
+        t.arg = p;
         t.function = func;
-        t.factory_id = pthread_self();
         Produce(pl,t);
     }
     return NULL;
 }
-
 
 
 int main(int argc,char **argv)
