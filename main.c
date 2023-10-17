@@ -47,4 +47,6 @@ int main(int argc,char **argv)
     {
         pthread_create(&tid[i],NULL,Factory,pl);
     }
+    pthread_join(pl->admin,NULL);
+    return 0;
 }

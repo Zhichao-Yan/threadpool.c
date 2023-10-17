@@ -125,7 +125,6 @@ void Produce(pool *pl,task t)
 }
 void* Admin(void* arg)
 {
-    pthread_detach(pthread_self());
     pool *pl = (pool*)arg;
     srand(time(NULL)); // 播下时间种子
     double busy_ratio; // 忙的线程占存活线程比例
