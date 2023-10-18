@@ -11,12 +11,7 @@
 #define shutdown 0
 #define running 1
 
-
-static volatile int queue_stop = 0; // 当flag1 = 1，当前线程阻塞，队列关闭，不再接受任务
-pthread_cond_t queue_running = PTHREAD_COND_INITIALIZER;  // 等待flag1 == 0条件状态的条件变量
-pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER; // 对flag1的互斥保护量
 static volatile int threads_hold_on = 0; // 工作线程休眠控制量
-
 pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -84,13 +79,7 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
 void pool_destroy(pool *pl)
 {
     pl->state == shutdown;  // 把线程池状态置为shutdown关闭
-    pool_queue_terminate(); // 告诉生产线程准备终止队列
-    printf("准备销毁队列...........\n");
-    // 留时间让工作线程把剩余的任务处理完
-    while(!queue_empty(&(pl->q))) // 队列不为空，等待工作线程把剩余任务取走然后完成
-        sleep(1);
-    queue_destroy(&(pl->q)); // 销毁队列
-    
+    pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
     free(pl);
     pl = NULL;
@@ -220,11 +209,7 @@ void* Admin(void* arg)
 }
 void Produce(pool *pl,task t)
 {
-    pthread_mutex_lock(&queue_mutex);
-    while(queue_stop){ // 当queue_stop = 1，当前线程阻塞，队列关闭，不再接受任务
-        pthread_cond_wait(&queue_running,&queue_mutex);
-    }
-    pthread_mutex_unlock(&queue_mutex);
+    queue_open_wait(&(pl->q));
     if(pl->state == running) // 如果线程池存在，那么就放入任务
         queue_push(&(pl->q),t);
     else{
@@ -232,35 +217,28 @@ void Produce(pool *pl,task t)
     }
     return;
 }
-// 队列暂停，暂时不接受任务
-void pool_queue_stop(void)
+
+
+void pool_queue_pause(pool* pl)
 {
-    pthread_mutex_lock(&queue_mutex);
-    queue_stop = 1;
-    pthread_mutex_unlock(&queue_mutex);
+    queue_pause(&(pl->q));
+}
+void pool_queue_resume(pool* pl)
+{
+    queue_resume(&(pl->q));
 }
 
-// 通知所有生产线程可队列开始接收任务
-void pool_queue_begin(void)
+void pool_queue_destroy(pool* pl)
 {
-    pthread_mutex_lock(&queue_mutex);
-    queue_stop = 0;
-    pthread_mutex_unlock(&queue_mutex);
-    pthread_cond_broadcast(&queue_running); 
+    if(queue_state(&(pl->q)) == 0) // 队列目前是关闭的
+        queue_resume(&(pl->q)); // 先把队列打开，唤醒阻塞的生产线程，此时线程池已经shutdown，生产线程会自动退出
+    printf("准备销毁队列...........\n");
+    // 留时间让工作线程把剩余的任务处理完
+    while(!queue_empty(&(pl->q))) // 队列不为空，等待工作线程把剩余任务取走然后完成
+        sleep(1);
+    queue_destroy(&(pl->q)); // 销毁队列
 }
 
-// 如果生产线程都因为队列暂停接受任务而阻塞在那，那么唤醒生产线程
-// 示意队列即将销毁，提醒生产线程跳出阻塞状态，准备结束
-// 配合pl->state == shutdown一起作用，以便终止生产线程
-void pool_queue_terminate(void)
-{
-    if(queue_stop == 1) 
-    {
-        queue_stop = 0; 
-        pthread_cond_broadcast(&queue_running);
-    }
-    return;
-}
 
 // 信号处理函数
 void pool_thread_hold(int signal) 

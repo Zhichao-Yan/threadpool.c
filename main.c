@@ -54,9 +54,9 @@ int main(int argc,char **argv)
         pthread_create(&tid[i],NULL,Factory,pl);
     }
     sleep(10);
-    pool_queue_stop();
+    pool_queue_pause(pl);
     sleep(50);
-    pool_queue_begin();
+    pool_queue_resume(pl);
     pthread_join(pl->admin,NULL);
     return 0;
 }

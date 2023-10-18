@@ -15,11 +15,27 @@ int queue_init(queue *q,int size)
     q->rear = 0;
     q->len = 0;
     q->size = size;
+    q->state = 1;
+    pthread_cond_init(&(q->state_cond),NULL);
     pthread_cond_init(&(q->not_empty),NULL);
     pthread_cond_init(&(q->not_full),NULL);
     pthread_mutex_init(&(q->mutex),NULL);
     return 0;
 }
+
+int queue_empty(queue *q)
+{
+    if(q->front == q->rear)
+        return 1;
+    return 0;
+}
+int queue_full(queue *q)
+{
+    if((q->rear + 1)%(q->size) == q->front)
+        return 1;
+    return 0;
+}
+
 void queue_push(queue *q,task t)
 {   
     pthread_mutex_lock(&(q->mutex));
@@ -34,19 +50,6 @@ void queue_push(queue *q,task t)
     pthread_mutex_unlock(&(q->mutex));
     return;
 }
-int queue_empty(queue *q)
-{
-    if(q->front == q->rear)
-        return 1;
-    return 0;
-}
-int queue_full(queue *q)
-{
-    if((q->rear + 1)%(q->size) == q->front)
-        return 1;
-    return 0;
-}
-
 task queue_pull(queue *q)
 {
     pthread_mutex_lock(&(q->mutex));
@@ -72,8 +75,10 @@ void queue_destroy(queue *q)
         q->size = 0;
         q->len = 0;
         q->front = q->rear = 0;
+        q->state = -1; //队列处在销毁状态
         pthread_cond_destroy(&(q->not_full));
         pthread_cond_destroy(&(q->not_empty));
+        pthread_cond_destroy(&(q->state_cond));
         pthread_mutex_destroy(&(q->mutex));
     }
     // do nothing if the q.queue is NULL
@@ -86,4 +91,41 @@ int queue_length(queue *q)
     int length = q->len;
     pthread_mutex_unlock(&(q->mutex));
     return length;
+}
+int queue_state(queue *q)
+{
+    pthread_mutex_lock(&q->mutex);
+    int state = q->state;
+    pthread_mutex_unlock(&q->mutex);
+    return state;
+}
+
+// 队列暂停，暂时不接受任务
+void queue_pause(queue *q)
+{
+    pthread_mutex_lock(&q->mutex);
+    if(q->state == 1) // 队列目前是打开的
+        q->state = 0; // 那么我们把它关闭
+    pthread_mutex_unlock(&q->mutex);
+}
+
+// 通知所有生产线程可队列开始接收任务
+void queue_resume(queue *q)
+{
+    pthread_mutex_lock(&q->mutex);
+    if(q->state == 0) // 队列目前是关闭的
+    {
+        q->state = 1; // 那么我们把它打开
+        pthread_cond_broadcast(&q->state_cond); // 通知所有生产线程 
+    }
+    pthread_mutex_unlock(&q->mutex);
+}
+
+void queue_open_wait(queue *q)
+{
+    pthread_mutex_lock(&q->mutex);
+    while(q->state == 0){ // state == 0，队列关闭，不再接受任务,生产线程阻塞在这
+        pthread_cond_wait(&q->state_cond,&q->mutex);
+    }
+    pthread_mutex_unlock(&q->mutex);
 }
