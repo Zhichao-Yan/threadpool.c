@@ -5,6 +5,7 @@
 #define shutdown 0
 #define running 1
 
+
 typedef struct {
     int id;
     char name[50];
@@ -28,7 +29,11 @@ void* Factory(void* arg) // 生产产品的厂家
         task t;
         product *p = (product*)malloc(sizeof(product));  // arg通常指向堆内存
         p->id = ++i;
+#if defined(__APPLE__)
         sprintf(p->name,"生产线程0x%x",pthread_self());
+#elif defined(__linux__)
+        sprintf(p->name,"生产线程%ld",pthread_self());
+#endif
         t.arg = p;
         t.function = func;
         Produce(pl,t);
