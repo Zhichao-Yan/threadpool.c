@@ -81,7 +81,8 @@ void pool_destroy(pool *pl)
     pl->state == shutdown;  // 把线程池状态置为shutdown关闭
     pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
-    free(pl);
+    pthread_join(pl->admin,NULL); // 等待管理者线程结束
+    free(pl); // 可以释放了pl了
     pl = NULL;
 }
 void clean(void *arg)
@@ -143,7 +144,6 @@ void* Work(void* arg)
 
 void* Admin(void* arg)
 {
-    pthread_detach(pthread_self());
     pool *pl = (pool*)arg;
     srand(time(NULL)); // 播下时间种子
     double busy_ratio; // 忙的线程占存活线程比例
@@ -245,6 +245,7 @@ void pool_queue_destroy(pool* pl)
     // 但是此时生产线程已经不再生产任务，队列不再可能非空，但是我们还是应该广播唤醒等待的工作线程
     // 队列的此时状态q.state = -1，利用它唤醒
     pthread_cond_broadcast(&(pl->q).not_empty);
+    
     queue_destroy(&(pl->q)); // 销毁队列
     return;
 }
