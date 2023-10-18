@@ -50,20 +50,27 @@ void queue_push(queue *q,task t)
     pthread_mutex_unlock(&(q->mutex));
     return;
 }
-task queue_pull(queue *q)
+int queue_pull(queue *q,task *re)
 {
-    pthread_mutex_lock(&(q->mutex));
-    while(queue_empty(q)){
-        pthread_cond_wait(&(q->not_empty),&(q->mutex));
-    }
-    task re = q->tq[q->front]; // 任务数据被拷贝走，可以置空了
-    q->tq[q->front].arg = NULL; // 把取走的任务数据指针置空
-    q->tq[q->front].function = NULL; // 把取走的任务函数指针置空
-    q->front = (q->front + 1) % q->size;
-    --q->len;
-    pthread_cond_signal(&(q->not_full));
-    pthread_mutex_unlock(&(q->mutex));
-    return re;
+    do{
+        pthread_mutex_lock(&(q->mutex)); // 加锁
+        while(queue_empty(q) && q->state >= 0){
+            pthread_cond_wait(&(q->not_empty),&(q->mutex));
+        }
+        if(q->state == -1)
+        {
+            pthread_mutex_unlock(&(q->mutex)); // 退出前解锁
+            return -1;
+        }   
+        *re = q->tq[q->front]; // 任务数据被拷贝走，可以置空了
+        q->tq[q->front].arg = NULL; // 把取走的任务数据指针置空
+        q->tq[q->front].function = NULL; // 把取走的任务函数指针置空
+        q->front = (q->front + 1) % q->size;
+        --q->len;
+        pthread_cond_signal(&(q->not_full));
+    }while(0);
+    pthread_mutex_unlock(&(q->mutex)); // 退出前解锁
+    return 1;
 }
 
 void queue_destroy(queue *q)
@@ -119,6 +126,12 @@ void queue_resume(queue *q)
         pthread_cond_broadcast(&q->state_cond); // 通知所有生产线程 
     }
     pthread_mutex_unlock(&q->mutex);
+}
+
+void queue_terminate(queue *q)
+{
+    q->state = -1; //队列停止使用
+    pthread_cond_broadcast(&q->state_cond); // 通知所有生产线程
 }
 
 void queue_open_wait(queue *q)

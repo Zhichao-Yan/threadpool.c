@@ -55,8 +55,9 @@ int main(int argc,char **argv)
     }
     sleep(10);
     pool_queue_pause(pl);
-    sleep(50);
+    sleep(10);
     pool_queue_resume(pl);
-    pthread_join(pl->admin,NULL);
+    sleep(10);
+    pool_destroy(pl);
     return 0;
 }

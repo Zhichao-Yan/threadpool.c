@@ -19,14 +19,18 @@ typedef struct queue_t
 }queue;
 
 int queue_init(queue *q,int size);
+void queue_destroy(queue *q);
+
 int queue_empty(queue *q);
 int queue_full(queue *q);
-void queue_push(queue *q,task t);
-task queue_pull(queue *q);
-void queue_destroy(queue *q);
 int queue_length(queue *q);
 int queue_state(queue *q);
+
+void queue_push(queue *q,task t);
+int queue_pull(queue *q,task *re);
+
 void queue_pause(queue *q);
 void queue_resume(queue *q);
+void queue_terminate(queue *q);
 void queue_open_wait(queue *q);
 #endif

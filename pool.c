@@ -98,7 +98,7 @@ void* Work(void* arg)
     struct sigaction act; // 数据结构struct sigaction
 	sigemptyset(&act.sa_mask); // sigemptyset()清除sa_mask中的信号集
 	act.sa_flags = 0;
-	act.sa_handler = pool_thread_hold;
+	act.sa_handler = pool_threads_hold;
     // 调用sigaction函数修改信号SIGUSR1相关的处理动作，即以后用这个处理函数响应信号
     // 在调用信号处理函数之前act.sa_mask会被加到进程的信号屏蔽字中
     // 信号处理函数sa_handle返回后进程信号集会被还原
@@ -113,7 +113,12 @@ void* Work(void* arg)
     // 只有2者都不满足，才跳出循环
     while(pl->state == running || !queue_empty(&(pl->q))) // 只要队列不为空或者线程池存活就继续循环
     {
-        task t = queue_pull(&(pl->q));
+        // 存在一种情况：线程池shutdown，队列只有一个任务（非空），但是2个工作线程进入了循环
+        // 一个线程取走了任务，另外一个线程阻塞在queue_pull，我们需要通过pool_queue_destroy函数中
+        // 广播一个not_empty的条件变量唤醒这个线程，否则它一直阻塞在里面
+        task t;
+        if(queue_pull(&(pl->q),&t) == -1) // 队列状态q.state = -1 时，获取失败，返回-1，退出当前循环
+            break;
         double ck = (double)(clock() - t.ti)/CLOCKS_PER_SEC * 1000;
         double avg = get_avg_time(ck);
 
@@ -138,6 +143,7 @@ void* Work(void* arg)
 
 void* Admin(void* arg)
 {
+    pthread_detach(pthread_self());
     pool *pl = (pool*)arg;
     srand(time(NULL)); // 播下时间种子
     double busy_ratio; // 忙的线程占存活线程比例
@@ -230,18 +236,22 @@ void pool_queue_resume(pool* pl)
 
 void pool_queue_destroy(pool* pl)
 {
-    if(queue_state(&(pl->q)) == 0) // 队列目前是关闭的
-        queue_resume(&(pl->q)); // 先把队列打开，唤醒阻塞的生产线程，此时线程池已经shutdown，生产线程会自动退出
+    queue_terminate(&(pl->q));
     printf("准备销毁队列...........\n");
     // 留时间让工作线程把剩余的任务处理完
     while(!queue_empty(&(pl->q))) // 队列不为空，等待工作线程把剩余任务取走然后完成
         sleep(1);
+    // 队列为空，可能存在工作线程阻塞等待（队列为非空）的条件状态
+    // 但是此时生产线程已经不再生产任务，队列不再可能非空，但是我们还是应该广播唤醒等待的工作线程
+    // 队列的此时状态q.state = -1，利用它唤醒
+    pthread_cond_broadcast(&(pl->q).not_empty);
     queue_destroy(&(pl->q)); // 销毁队列
+    return;
 }
 
 
 // 信号处理函数
-void pool_thread_hold(int signal) 
+void pool_threads_hold(int signal) 
 {
     if(signal == SIGUSR1)
 	{
@@ -253,7 +263,7 @@ void pool_thread_hold(int signal)
 	return;
 }
 // 所有工作线程休眠
-void pool_thread_pause(pool* pl)
+void pool_threads_pause(pool* pl)
 {
 	for ( int i = 0; i < pl->max_threads; i++){
         if(pl->worker[i].state == 1)
@@ -261,7 +271,7 @@ void pool_thread_pause(pool* pl)
 	}
 }
 // 所有线程重新醒过来
-void pool_thread_resume() 
+void pool_threads_resume() 
 {
     threads_hold_on = 0; 
 }
