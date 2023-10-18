@@ -35,4 +35,12 @@ void pool_destroy(pool *pl);
 void* Admin(void* arg);
 void* Work(void* arg);
 void Produce(pool *pl,task t);
+
+void pool_queue_stop(void);
+void pool_queue_begin(void);
+void pool_queue_terminate(void);
+
+void pool_thread_hold(int signal);
+void pool_thread_pause(pool* pl);
+void pool_thread_resume();
 #endif

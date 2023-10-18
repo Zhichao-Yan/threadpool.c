@@ -36,7 +36,7 @@ void queue_push(queue *q,task t)
 }
 int queue_empty(queue *q)
 {
-    if(q->len == 0)
+    if(q->front == q->rear)
         return 1;
     return 0;
 }

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "pool.h"
 #include "task.h"
+#define shutdown 0
+#define running 1
 
 typedef struct {
     int id;
@@ -21,7 +23,7 @@ void* Factory(void* arg) // 生产产品的厂家
     pthread_detach(pthread_self());
     pool *pl = (pool*)arg;
     int i = 0;
-    while(1)
+    while(pl->state == running) // 线程池在运行才继续生产
     {
         task t;
         product *p = (product*)malloc(sizeof(product));  // arg通常指向堆内存
@@ -31,7 +33,7 @@ void* Factory(void* arg) // 生产产品的厂家
         t.function = func;
         Produce(pl,t);
     }
-    return NULL;
+    pthread_exit(NULL);
 }
 
 
@@ -51,6 +53,10 @@ int main(int argc,char **argv)
     {
         pthread_create(&tid[i],NULL,Factory,pl);
     }
+    sleep(10);
+    pool_queue_stop();
+    sleep(50);
+    pool_queue_begin();
     pthread_join(pl->admin,NULL);
     return 0;
 }
