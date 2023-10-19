@@ -1,3 +1,4 @@
 .vscode
 pool.dSYM
-pool
+pool.out
+pool.out.dSYM
