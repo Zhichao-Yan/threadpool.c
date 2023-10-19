@@ -1,3 +1,13 @@
+/*
+ * @Author: yan yzc53@icloud.com
+ * @Date: 2023-10-17 19:42:57
+ * @LastEditors: yan yzc53@icloud.com
+ * @LastEditTime: 2023-10-19 20:40:41
+ * @FilePath: /threadpool.c/main.c
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by ${git_name_email}, All Rights Reserved. 
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include "pool.h"
@@ -21,7 +31,7 @@ void* func(void* arg)
 
 void* Factory(void* arg) // 生产产品的厂家
 {
-    pthread_detach(pthread_self());
+    pthread_detach(pthread_self()); //TODO
     pool *pl = (pool*)arg;
     int i = 0;
     while(pl->state == running) // 线程池在运行才继续生产
@@ -30,7 +40,7 @@ void* Factory(void* arg) // 生产产品的厂家
         product *p = (product*)malloc(sizeof(product));  // arg通常指向堆内存
         p->id = ++i;
 #if defined(__APPLE__)
-        sprintf(p->name,"生产线程0x%x",pthread_self());
+        sprintf(p->name,"生产线程0x%p",pthread_self());
 #elif defined(__linux__)
         sprintf(p->name,"生产线程%ld",pthread_self());
 #endif
@@ -40,6 +50,7 @@ void* Factory(void* arg) // 生产产品的厂家
     }
     pthread_exit(NULL);
 }
+
 
 
 int main(int argc,char **argv)
@@ -61,7 +72,7 @@ int main(int argc,char **argv)
     sleep(10);
     pool_queue_pause(pl);
     sleep(10);
-    pool_queue_resume(pl);
+    pool_queue_resume(pl); //TODO
     sleep(10);
     pool_destroy(pl);
     return 0;

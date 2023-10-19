@@ -1,3 +1,13 @@
+/*
+ * @Author: yan yzc53@icloud.com
+ * @Date: 2023-10-17 19:42:57
+ * @LastEditors: yan yzc53@icloud.com
+ * @LastEditTime: 2023-10-19 12:26:26
+ * @FilePath: /threadpool.c/pool.h
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by ${git_name_email}, All Rights Reserved. 
+ */
 #ifndef POOL_H
 #define POOL_H
 #include "task.h"

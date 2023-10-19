@@ -78,7 +78,7 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
 }
 void pool_destroy(pool *pl)
 {
-    pl->state == shutdown;  // 把线程池状态置为shutdown关闭
+    pl->state = shutdown;  // 把线程池状态置为shutdown关闭
     pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
     pthread_join(pl->admin,NULL); // 等待管理者线程结束
@@ -89,12 +89,16 @@ void clean(void *arg)
 {
     pool *pl = (pool*)arg;
     pthread_mutex_unlock(&((pl->q).mutex)); // 清理函数，线程响应取消时，锁可能没释放，因此清理函数应当释放锁
-    printf("thread:%ld响应取消退出\n",pthread_self());
+#if defined(__APPLE__)
+        printf("thread:0x%p响应取消退出\n",pthread_self());
+#elif defined(__linux__)
+        printf("thread:%ld响应取消退出\n",pthread_self());
+#endif
     return;
 }
 void* Work(void* arg)
 {
-    pthread_detach(pthread_self());
+    pthread_detach(pthread_self()); //TODO
     pthread_cleanup_push(clean,arg); // 注册清理函数，线程响应取消时执行清理函数
     struct sigaction act; // 数据结构struct sigaction
 	sigemptyset(&act.sa_mask); // sigemptyset()清除sa_mask中的信号集
@@ -245,7 +249,7 @@ void pool_queue_destroy(pool* pl)
     // 但是此时生产线程已经不再生产任务，队列不再可能非空，但是我们还是应该广播唤醒等待的工作线程
     // 队列的此时状态q.state = -1，利用它唤醒
     pthread_cond_broadcast(&(pl->q).not_empty);
-    
+
     queue_destroy(&(pl->q)); // 销毁队列
     return;
 }
