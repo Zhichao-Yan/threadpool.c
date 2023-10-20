@@ -116,9 +116,12 @@ void clean(void *arg)
 }
 void* Work(void* arg)
 {
-    pthread_detach(pthread_self()); // 自动分离
-    pthread_cleanup_push(clean,arg); // 注册清理函数，线程响应取消时执行清理函数
     sigal_register(); // 注册信号
+
+    pthread_detach(pthread_self()); // 自动分离
+
+    pthread_cleanup_push(clean,arg); // 注册清理函数，线程响应取消时执行清理函数
+
     pool *pl = (pool*)arg;
     // 队列不为空，即使线程池shutdown，还是应该把剩余的任务处理完
     // 只有2者都不满足，才跳出循环
@@ -148,18 +151,23 @@ void* Work(void* arg)
         pthread_mutex_unlock(&busy_lock);
         pthread_testcancel(); // 取消点
     }
+    
     pthread_cleanup_pop(0); // 弹出清理函数，参数为0，正常运行结束不会执行清理函数
+
     pthread_exit(NULL);
 }
 
 void* Admin(void* arg)
 {
     sigal_register(); // 注册信号
-    pool *pl = (pool*)arg;
+
     srand(time(NULL)); // 播下时间种子
+
     double busy_ratio; // 忙的线程占存活线程比例
     double queue_usage; //队列使用率
     double avg_time; // 任务平均等待时间
+
+    pool *pl = (pool*)arg;
     while(pl->state == running)
     {
         sleep(rand()%10); // 休息随机时间后抽查运行状况
