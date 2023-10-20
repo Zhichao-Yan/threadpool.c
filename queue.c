@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-16 16:06:07
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-19 00:12:05
+ * @LastEditTime: 2023-10-20 13:05:34
  * @FilePath: /threadpool.c/queue.c
  * @Description:
  *
@@ -18,7 +18,7 @@ int queue_init(queue *q, int size)
     q->tq = (task *)malloc(sizeof(task) * size);
     if (q->tq == NULL)
     {
-        err("Failed to malloc a queue\n");
+        fprintf(stderr,"Failed to malloc a queue\n");
         return -1;
     }
     q->front = 0;
