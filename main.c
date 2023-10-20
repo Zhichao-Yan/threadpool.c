@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 12:54:03
+ * @LastEditTime: 2023-10-20 17:18:54
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * 
@@ -77,8 +77,13 @@ int main(int argc,char **argv)
     }
     sleep(15);
     pool_threads_pause(pl);
-    sleep(15);
+    sleep(50);
     pool_threads_resume();
+    sleep(15);
+    pool_queue_pause(pl);
+    sleep(50);
+    pool_queue_resume(pl);
+    sleep(15);
     pthread_join(pl->admin,NULL);
     return 0;
 }
