@@ -2,3 +2,4 @@
 pool.dSYM
 pool.out
 pool.out.dSYM
+core*
