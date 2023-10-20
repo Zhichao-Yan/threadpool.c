@@ -334,6 +334,7 @@ void pool_threads_hold(int signal)
 void pool_threads_pause(pool* pl)
 {
     // pthread_kill(pl->admin, SIGUSR1);
+    fprintf(stderr,"工作线程挂起！开始睡眠\n");
 	for ( int i = 0; i < pl->max_threads; i++){
         if(pl->worker[i].state == 1)
 		    pthread_kill(pl->worker[i].tid, SIGUSR1);
@@ -343,6 +344,7 @@ void pool_threads_pause(pool* pl)
 void pool_threads_resume() 
 {
     threads_hold_on = 0; 
+    fprintf(stderr,"工作线程醒来！开始工作\n");
 }
 
 
