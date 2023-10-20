@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-19 20:40:41
+ * @LastEditTime: 2023-10-20 09:03:18
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * 
@@ -70,10 +70,7 @@ int main(int argc,char **argv)
         pthread_create(&tid[i],NULL,Factory,pl);
     }
     sleep(10);
-    pool_queue_pause(pl);
-    sleep(10);
-    pool_queue_resume(pl); //TODO
-    sleep(10);
-    pool_destroy(pl);
+    pool_threads_pause(pl);
+    sleep(50);
     return 0;
 }
