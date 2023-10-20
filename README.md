@@ -1,14 +1,15 @@
-<!--
- * @Author: yan yzc53@icloud.com
- * @Date: 2023-10-16 15:53:09
- * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 17:45:11
- * @FilePath: /threadpool.c/README.md
- * @Description: 
- * @QQ: 1594047159@qq.com
- * Copyright (c) 2023,All Rights Reserved. 
--->
 # threadpool.c
+
+* 使用方式：参考`main.c`文件
+
+* 实现：
+    * 线程挂起：信号机制
+    * 队列关闭：条件变量
+    * 管理线程：监控线程池运行，并动态调整线程数量
+    * 生产线程：产生一个任务放入任务队列
+    * 工作线程：从队列取出任务，运行函数处理任务
+
+
 ```C++
 /*
  *                   ___====-_  _-====___

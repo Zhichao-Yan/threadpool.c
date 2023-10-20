@@ -84,7 +84,13 @@ static int get_avg_busy(int ck)
     i = (i + 1) % 3;
     return avg;
 }
-
+/**
+ * @description: 
+ * @param {int} core_pool_size 核心线程数：最好和CPU核心数相同
+ * @param {int} max_threads 最大线程数
+ * @param {int} max_queue 任务队列大小
+ * @return {*} 返回线程池指针
+ */
 pool* pool_init(int core_pool_size,int max_threads,int max_queue)
 {
     pool * pl = (pool*)malloc(sizeof(pool));
