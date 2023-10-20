@@ -196,7 +196,7 @@ void* Work(void* arg)
 
 void* Admin(void* arg)
 {
-    sigal_register(); // 注册信号
+    // sigal_register(); // 注册信号
 
     char thread_name[] = "Admin";
 #if defined(__linux__)
@@ -217,7 +217,7 @@ void* Admin(void* arg)
         sleep(rand()%10); // 休息随机时间后抽查运行状况
 
         int current_queue_length = queue_length(&(pl->q));
-        int avg_queue_length = get_avg_length(current_queue_length);
+        int avg_queue_length = get_avg_length(current_queue_length); // 随机采样求均值
         queue_usage = (double)avg_queue_length/(pl->q).size;
 
         // pl->alive 工作线程不需要知道有多少线程存在，管理线程知道即可
@@ -234,8 +234,8 @@ void* Admin(void* arg)
         double avg_time = get_avg_time(ti);
         
         fprintf(stderr,"目前线程池状态:\n队列使用率:%.2f--繁忙线程:%d/%d--任务平均等待时间:%.4f(ms)\n",queue_usage,avg_busy_number,pl->alive,avg_time);
-
-        if(pl->state == running && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
+        // 线程池必须在运行，并且工作线程没有被挂起的情况下动态调整线程数目
+        if(pl->state == running && threads_hold_on == 0 && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
         {
             int cancel = 0; // 打算取消的线程
             if(MIN_THREADS >= pl->alive * 0.5) // 如果最小线程数大于当前线程数的0.5，取消到只有最小那么多
@@ -256,7 +256,8 @@ void* Admin(void* arg)
                 }
             }
         }
-        if(pl->state == running && busy_ratio >= 0.8 && queue_usage >= 0.8)
+        // 线程池必须在运行，并且工作线程没有被挂起的情况下动态调整线程数目
+        if(pl->state == running && threads_hold_on == 0 && busy_ratio >= 0.8 && queue_usage >= 0.8)
         {
             int add = 0;
             if(pl->alive < pl->core_pool_size) // 如果当前线程数小于核心线程数
@@ -332,7 +333,7 @@ void pool_threads_hold(int signal)
 // 所有工作线程和管理线程休眠
 void pool_threads_pause(pool* pl)
 {
-    pthread_kill(pl->admin, SIGUSR1);
+    // pthread_kill(pl->admin, SIGUSR1);
 	for ( int i = 0; i < pl->max_threads; i++){
         if(pl->worker[i].state == 1)
 		    pthread_kill(pl->worker[i].tid, SIGUSR1);
