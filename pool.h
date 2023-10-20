@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 12:18:27
+ * @LastEditTime: 2023-10-20 12:55:37
  * @FilePath: /threadpool.c/pool.h
  * @Description: 
  * 
@@ -30,6 +30,7 @@
 #endif
 #define shutdown 0
 #define running 1
+#define err(str) fprintf(stderr, str)
 
 typedef struct thread_t
 {

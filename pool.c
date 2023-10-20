@@ -23,7 +23,7 @@ void sigal_register()
     // 出错返回-1
 	if (sigaction(SIGUSR1, &act, NULL) == -1) 
     { 
-		printf("Work(): cannot handle SIGUSR1\n");
+		err("Work(): cannot handle SIGUSR1\n");
 	}
     return;
 }
@@ -53,7 +53,7 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
     pool * pl = (pool*)malloc(sizeof(pool));
     if(pl == NULL)
     {
-        printf("Failed to initialzie a pool!\n");
+        err("Failed to initialzie a pool!\n");
         return NULL;
     }
     pl->min_threads = MIN_THREADS; // 最小线程数
@@ -65,7 +65,7 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
     do{
         if(queue_init(&(pl->q),max_queue) != 0)
         {
-            printf("Failed to initialzie a queue!\n");
+            err("Failed to initialzie a queue!\n");
             free(pl);
             pl = NULL;
             break;
@@ -73,7 +73,7 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
         pl->worker = (thread*)malloc(sizeof(thread) * max_threads);
         if(pl->worker == NULL)
         {
-            printf("Failed to malloc memory for worker!\n");
+            err("Failed to malloc memory for worker!\n");
             queue_destroy(&(pl->q));
             free(pl);
             pl = NULL;
@@ -103,9 +103,9 @@ void clean(void *arg)
     pool *pl = (pool*)arg;
     pthread_mutex_unlock(&((pl->q).mutex)); // 清理函数，线程响应取消时，锁可能没释放，因此清理函数应当释放锁
 #if defined(__APPLE__)
-        printf("thread:0x%p响应取消退出\n",pthread_self());
+        fprintf(stderr,"thread:0x%p响应取消退出\n",pthread_self());
 #elif defined(__linux__)
-        printf("thread:%ld响应取消退出\n",pthread_self());
+        fprintf(stderr,"thread:%ld响应取消退出\n",pthread_self());
 #endif
     return;
 }
@@ -195,7 +195,7 @@ void* Admin(void* arg)
         avg_time = pl->tawt;
         pthread_mutex_unlock(&time_lock);
 
-        printf("目前线程池状态：\
+        fprintf(stderr,"目前线程池状态：\
         \n队列使用率:%f--线程使用率:%f--任务平均等待时间:%f(ms)\n",queue_usage,busy_ratio,avg_time);
 
         if(pl->state == running && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
@@ -266,7 +266,7 @@ void pool_queue_resume(pool* pl)
 void pool_queue_destroy(pool* pl)
 {
     queue_terminate(&(pl->q));
-    printf("准备销毁队列...........\n");
+    err("准备销毁队列...........\n");
     // 留时间让工作线程把剩余的任务处理完
     while(!queue_empty(&(pl->q))) // 队列不为空，等待工作线程把剩余任务取走然后完成
         sleep(1);

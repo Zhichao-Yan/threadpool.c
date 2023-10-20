@@ -18,7 +18,7 @@ int queue_init(queue *q, int size)
     q->tq = (task *)malloc(sizeof(task) * size);
     if (q->tq == NULL)
     {
-        printf("Failed to malloc a queue\n");
+        err("Failed to malloc a queue\n");
         return -1;
     }
     q->front = 0;

@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 12:19:08
+ * @LastEditTime: 2023-10-20 12:54:03
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * 
@@ -22,7 +22,7 @@ typedef struct {
 void* func(void* arg)
 {
     product *p = (product*)arg;
-    printf("处理来自%s的第%d个任务\n",p->name,p->id);
+    fprintf(stdout,"处理来自%s的第%d个任务\n",p->name,p->id);
     free(arg); // 任务执行完成，释放堆分配的内存
     return NULL;
 }
@@ -66,7 +66,7 @@ int main(int argc,char **argv)
         exit(-1);
     if(argc != 2)
     {
-        printf("pool [threads]\n");
+        err("pool [threads]\n");
         return -1;
     }
     int number = atoi(argv[1]);
