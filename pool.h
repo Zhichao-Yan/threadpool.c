@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-19 12:26:26
+ * @LastEditTime: 2023-10-20 12:18:27
  * @FilePath: /threadpool.c/pool.h
  * @Description: 
  * 
@@ -15,6 +15,21 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
+#if defined(__APPLE__)
+#include <AvailabilityMacros.h>
+#else
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#endif
+#define shutdown 0
+#define running 1
 
 typedef struct thread_t
 {

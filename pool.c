@@ -1,15 +1,10 @@
 #include "pool.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-
 #ifndef MIN_THREADS
 #define MIN_THREADS 3 
 #endif 
 #define DEFAULT_INCREMENT1 2 // 线程不足核心线程数时，默认自增的线程数
 #define DEFAULT_INCREMENT2 5 // 线程数量超过核心线程数时，默认的自增线程数目
-#define shutdown 0
-#define running 1
+
 
 static volatile int threads_hold_on = 0; // 工作线程休眠控制量
 pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -118,6 +113,13 @@ void* Work(void* arg)
 {
     sigal_register(); // 注册信号
 
+    char thread_name[] = "Work";
+#if defined(__linux__)
+	/* Use prctl instead to prevent using _GNU_SOURCE flag and implicit declaration */
+	prctl(PR_SET_NAME, thread_name);
+#elif defined(__APPLE__) && defined(__MACH__)
+	pthread_setname_np(thread_name);
+#endif
     pthread_detach(pthread_self()); // 自动分离
 
     pthread_cleanup_push(clean,arg); // 注册清理函数，线程响应取消时执行清理函数
@@ -160,6 +162,14 @@ void* Work(void* arg)
 void* Admin(void* arg)
 {
     sigal_register(); // 注册信号
+
+    char thread_name[] = "Admin";
+#if defined(__linux__)
+	/* Use prctl instead to prevent using _GNU_SOURCE flag and implicit declaration */
+	prctl(PR_SET_NAME, thread_name);
+#elif defined(__APPLE__) && defined(__MACH__)
+	pthread_setname_np(thread_name);
+#endif
 
     srand(time(NULL)); // 播下时间种子
 

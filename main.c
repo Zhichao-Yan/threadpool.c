@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 11:01:35
+ * @LastEditTime: 2023-10-20 12:19:08
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * 
@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include "pool.h"
 #include "task.h"
-#define shutdown 0
-#define running 1
 
 
 typedef struct {
@@ -31,6 +29,14 @@ void* func(void* arg)
 
 void* Factory(void* arg) // 生产产品的厂家
 {
+    char thread_name[] = "Factory";
+#if defined(__linux__)
+	/* Use prctl instead to prevent using _GNU_SOURCE flag and implicit declaration */
+	prctl(PR_SET_NAME, thread_name);
+#elif defined(__APPLE__) && defined(__MACH__)
+	pthread_setname_np(thread_name);
+#endif
+
     pthread_detach(pthread_self()); //TODO
     pool *pl = (pool*)arg;
     int i = 0;
