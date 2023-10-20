@@ -15,6 +15,24 @@ static volatile int threads_hold_on = 0; // 工作线程休眠控制量
 pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
+void sigal_register()
+{
+    struct sigaction act; // 数据结构struct sigaction
+	sigemptyset(&act.sa_mask); // sigemptyset()清除sa_mask中的信号集
+	act.sa_flags = 0;
+	act.sa_handler = pool_threads_hold;
+    // 调用sigaction函数修改信号SIGUSR1相关的处理动作，即以后用这个处理函数响应信号
+    // 在调用信号处理函数之前act.sa_mask会被加到进程的信号屏蔽字中
+    // 信号处理函数sa_handle返回后进程信号集会被还原
+    // SIGUSR1 也在操作系统建立的新信号屏蔽字中，保证了在处理给定信号时，如果这种信号再次发生，它会被阻塞到信号处理完毕
+    // 出错返回-1
+	if (sigaction(SIGUSR1, &act, NULL) == -1) 
+    { 
+		printf("Work(): cannot handle SIGUSR1\n");
+	}
+    return;
+}
+
 static double get_avg_time(double ck)
 {
     static double t[5] = {-1.0,-1.0,-1.0,-1.0,-1.0};
@@ -98,21 +116,9 @@ void clean(void *arg)
 }
 void* Work(void* arg)
 {
-    pthread_detach(pthread_self()); //TODO
+    pthread_detach(pthread_self()); // 自动分离
     pthread_cleanup_push(clean,arg); // 注册清理函数，线程响应取消时执行清理函数
-    struct sigaction act; // 数据结构struct sigaction
-	sigemptyset(&act.sa_mask); // sigemptyset()清除sa_mask中的信号集
-	act.sa_flags = 0;
-	act.sa_handler = pool_threads_hold;
-    // 调用sigaction函数修改信号SIGUSR1相关的处理动作，即以后用这个处理函数响应信号
-    // 在调用信号处理函数之前act.sa_mask会被加到进程的信号屏蔽字中
-    // 信号处理函数sa_handle返回后进程信号集会被还原
-    // SIGUSR1 也在操作系统建立的新信号屏蔽字中，保证了在处理给定信号时，如果这种信号再次发生，它会被阻塞到信号处理完毕
-    // 出错返回-1
-	if (sigaction(SIGUSR1, &act, NULL) == -1) 
-    { 
-		printf("Work(): cannot handle SIGUSR1\n");
-	}
+    sigal_register(); // 注册信号
     pool *pl = (pool*)arg;
     // 队列不为空，即使线程池shutdown，还是应该把剩余的任务处理完
     // 只有2者都不满足，才跳出循环
@@ -148,6 +154,7 @@ void* Work(void* arg)
 
 void* Admin(void* arg)
 {
+    sigal_register(); // 注册信号
     pool *pl = (pool*)arg;
     srand(time(NULL)); // 播下时间种子
     double busy_ratio; // 忙的线程占存活线程比例
@@ -267,9 +274,10 @@ void pool_threads_hold(int signal)
 	}
 	return;
 }
-// 所有工作线程休眠
+// 所有工作线程和管理线程休眠
 void pool_threads_pause(pool* pl)
 {
+    pthread_kill(pl->admin, SIGUSR1);
 	for ( int i = 0; i < pl->max_threads; i++){
         if(pl->worker[i].state == 1)
 		    pthread_kill(pl->worker[i].tid, SIGUSR1);
@@ -280,3 +288,5 @@ void pool_threads_resume()
 {
     threads_hold_on = 0; 
 }
+
+
