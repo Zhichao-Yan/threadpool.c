@@ -30,7 +30,7 @@ void sigal_register()
 
 static double get_avg_time(double ck)
 {
-    static double t[5] = {-1.0,-1.0,-1.0,-1.0,-1.0};
+    static double t[5] = {-0.0,-0.0,-0.0,-0.0,-0.0};
     static int i = 0;
     static double sum = 0.0;
     double avg;
@@ -45,6 +45,24 @@ static double get_avg_time(double ck)
         t[i] = ck;
     }
     i = (i + 1) % 5;
+    return avg;
+}
+static int get_avg_number(int ck)
+{
+    static int t[3] = {-1,-1,-1};
+    static int i = 0;
+    static double sum = 0;
+    int avg;
+    if(t[i] < 0)
+    {
+        sum += ck;
+        avg = sum / (i+1);
+    }else{
+        sum = sum - t[i] + ck;
+        avg = sum / 3;
+    }
+    t[i] = ck;
+    i = (i + 1) % 3;
     return avg;
 }
 
@@ -135,11 +153,10 @@ void* Work(void* arg)
         task t;
         if(queue_pull(&(pl->q),&t) == -1) // 队列状态q.state = -1 时，获取失败，返回-1，退出当前循环
             break;
-        double ck = (double)(clock() - t.ti)/CLOCKS_PER_SEC * 1000;
-        double avg = get_avg_time(ck);
 
+        double ck = (double)(clock() - t.ti)/CLOCKS_PER_SEC * 1000;
         pthread_mutex_lock(&time_lock);
-        pl->tawt = avg;
+        pl->ti = ck;
         pthread_mutex_unlock(&time_lock);
 
         pthread_mutex_lock(&busy_lock);
@@ -173,30 +190,32 @@ void* Admin(void* arg)
 
     srand(time(NULL)); // 播下时间种子
 
-    double busy_ratio; // 忙的线程占存活线程比例
     double queue_usage; //队列使用率
-    double avg_time; // 任务平均等待时间
+    double busy_ratio; // 忙的线程占存活线程比例
 
     pool *pl = (pool*)arg;
     while(pl->state == running)
     {
         sleep(rand()%10); // 休息随机时间后抽查运行状况
 
-        int length = queue_length(&(pl->q));
-        queue_usage = (double)length/(pl->q).size;
+        int current_queue_length = queue_length(&(pl->q));
+        int avg_queue_length = get_avg_number(current_queue_length);
+        queue_usage = (double)avg_queue_length/(pl->q).size;
 
         // pl->alive 工作线程不需要知道有多少线程存在，管理线程知道即可
         // 因此不需要对alive互斥访问，只有管理线程知道alive
         pthread_mutex_lock(&busy_lock);
-        busy_ratio = (double)pl->busy / pl->alive; 
+        int current_busy_number = pl->busy; 
         pthread_mutex_unlock(&busy_lock);
+        int avg_busy_number = get_avg_number(current_busy_number); // 获得最近一段时间的平均的繁忙线程数
+        busy_ratio =  (double)avg_busy_number/(pl->alive); // 求得最近的平均线程使用率，作为动态调整线程数量的依据
 
         pthread_mutex_lock(&time_lock);
-        avg_time = pl->tawt;
+        double ti = pl->ti;
         pthread_mutex_unlock(&time_lock);
-
-        fprintf(stderr,"目前线程池状态：\
-        \n队列使用率:%f--线程使用率:%f--任务平均等待时间:%f(ms)\n",queue_usage,busy_ratio,avg_time);
+        double avg_time = get_avg_time(ti);
+        
+        fprintf(stderr,"目前线程池状态:\n队列使用率:%.2f--繁忙线程:%d/%d--任务平均等待时间:%.4f(ms)\n",queue_usage,avg_busy_number,pl->alive,avg_time);
 
         if(pl->state == running && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
         {

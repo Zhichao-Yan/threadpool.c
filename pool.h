@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 12:55:37
+ * @LastEditTime: 2023-10-20 15:07:33
  * @FilePath: /threadpool.c/pool.h
  * @Description: 
  * 
@@ -53,7 +53,7 @@ typedef struct pool_t{
     int state; // 线程池状态
     int alive;
     int busy;
-    double tawt; // task average wait time in queue
+    double ti; // current task wait time 
 }pool;
 
 pool* pool_init(int core_pool_size,int max_threads,int max_queue);
