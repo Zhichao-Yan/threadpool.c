@@ -47,7 +47,25 @@ static double get_avg_time(double ck)
     i = (i + 1) % 5;
     return avg;
 }
-static int get_avg_number(int ck)
+static int get_avg_length(int ck)
+{
+    static int t[3] = {-1,-1,-1};
+    static int i = 0;
+    static double sum = 0;
+    int avg;
+    if(t[i] < 0)
+    {
+        sum += ck;
+        avg = sum / (i+1);
+    }else{
+        sum = sum - t[i] + ck;
+        avg = sum / 3;
+    }
+    t[i] = ck;
+    i = (i + 1) % 3;
+    return avg;
+}
+static int get_avg_busy(int ck)
 {
     static int t[3] = {-1,-1,-1};
     static int i = 0;
@@ -199,7 +217,7 @@ void* Admin(void* arg)
         sleep(rand()%10); // 休息随机时间后抽查运行状况
 
         int current_queue_length = queue_length(&(pl->q));
-        int avg_queue_length = get_avg_number(current_queue_length);
+        int avg_queue_length = get_avg_length(current_queue_length);
         queue_usage = (double)avg_queue_length/(pl->q).size;
 
         // pl->alive 工作线程不需要知道有多少线程存在，管理线程知道即可
@@ -207,7 +225,7 @@ void* Admin(void* arg)
         pthread_mutex_lock(&busy_lock);
         int current_busy_number = pl->busy; 
         pthread_mutex_unlock(&busy_lock);
-        int avg_busy_number = get_avg_number(current_busy_number); // 获得最近一段时间的平均的繁忙线程数
+        int avg_busy_number = get_avg_busy(current_busy_number); // 获得最近一段时间的平均的繁忙线程数
         busy_ratio =  (double)avg_busy_number/(pl->alive); // 求得最近的平均线程使用率，作为动态调整线程数量的依据
 
         pthread_mutex_lock(&time_lock);
