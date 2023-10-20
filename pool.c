@@ -65,6 +65,7 @@ static int get_avg_length(int ck)
     i = (i + 1) % 3;
     return avg;
 }
+
 static int get_avg_busy(int ck)
 {
     static int t[3] = {-1,-1,-1};
@@ -280,6 +281,12 @@ void* Admin(void* arg)
     }
     pthread_exit(NULL);
 }
+/**
+ * @description: put a task into a queue
+ * @param {pool} *pl
+ * @param {task} t
+ * @return {*}
+ */
 void Produce(pool *pl,task t)
 {
     queue_open_wait(&(pl->q));
@@ -318,7 +325,11 @@ void pool_queue_destroy(pool* pl)
 }
 
 
-// 信号处理函数
+/**
+ * @description:信号处理函数 
+ * @param {int} signal
+ * @return {void}
+ */
 void pool_threads_hold(int signal) 
 {
     if(signal == SIGUSR1)

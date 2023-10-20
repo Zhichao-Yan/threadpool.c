@@ -1,13 +1,14 @@
 /*
  * @Author: yan yzc53@icloud.com
- * @Date: 2023-10-17 19:42:57
+ * @Date: 2023-10-19 21:39:23
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 17:18:54
+ * @LastEditTime: 2023-10-20 17:41:08
  * @FilePath: /threadpool.c/main.c
  * @Description: 
- * 
- * Copyright (c) 2023 by ${git_name_email}, All Rights Reserved. 
+ * @QQ: 1594047159@qq.com
+ * Copyright (c) 2023,All Rights Reserved. 
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "pool.h"
