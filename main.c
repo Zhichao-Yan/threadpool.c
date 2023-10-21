@@ -78,15 +78,15 @@ int main(int argc,char **argv)
     {
         pthread_create(&tid[i],NULL,Factory,pl);
     }
-    sleep(15);
+    sleep(30);
     pool_threads_pause(pl);
-    sleep(50);
+    sleep(15);
     pool_threads_resume();
-    sleep(15);
+    sleep(30);
     pool_queue_pause(pl);
-    sleep(50);
-    pool_queue_resume(pl);
     sleep(15);
+    pool_queue_resume(pl);
+    sleep(30);
     pool_destroy(pl);
     return 0;
 }
