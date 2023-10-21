@@ -218,18 +218,25 @@ void* Admin(void* arg)
 
     srand(time(NULL)); // 播下时间种子
 
-    double queue_usage; //队列使用率
-    double busy_ratio; // 忙的线程占存活线程比例
+    double queue_usage; //最近一段时间内队列使用率
+    double cur_queue_usage; //实时队列使用率
+    double busy_ratio; // 实时繁忙率
 
     pool *pl = (pool*)arg;
     while(pl->state == running)
     {
         sleep(rand()%10); // 休息随机时间后抽查运行状况
-
-        int current_queue_length = queue_length(&(pl->q));
-        int avg_queue_length = get_avg_length(current_queue_length); // 随机采样求均值
-        queue_usage = (double)avg_queue_length/(pl->q).size;
-
+        fprintf(stderr,"线程池状态:\n");
+        if(pl->q.state >= 0)
+        {
+            int current_queue_length = queue_length(&(pl->q));
+            int avg_queue_length = get_avg_length(current_queue_length); // 随机采样求均值
+            queue_usage = (double)avg_queue_length/(pl->q).size;
+            cur_queue_usage = (double)current_queue_length/(pl->q).size;
+            fprintf(stderr,"实时队列使用率:%.2f",cur_queue_usage);
+        }else{
+            fprintf(stderr,"实时队列使用率:关闭");
+        }
         // pl->alive 工作线程不需要知道有多少线程存在，管理线程知道即可
         // 因此不需要对alive互斥访问，只有管理线程知道alive
         pthread_mutex_lock(&busy_lock);
@@ -237,13 +244,14 @@ void* Admin(void* arg)
         pthread_mutex_unlock(&busy_lock);
         int avg_busy_number = get_avg_busy(current_busy_number); // 获得最近一段时间的平均的繁忙线程数
         busy_ratio =  (double)avg_busy_number/(pl->alive); // 求得最近的平均线程使用率，作为动态调整线程数量的依据
+        fprintf(stderr,"--实时繁忙线程:%d/%d",current_busy_number,pl->alive);
 
         pthread_mutex_lock(&time_lock);
         double ti = pl->ti;
         pthread_mutex_unlock(&time_lock);
         double avg_time = get_avg_time(ti);
-        
-        fprintf(stderr,"目前线程池状态:\n队列使用率:%.2f--繁忙线程:%d/%d--任务平均等待时间:%.4f(ms)\n",queue_usage,avg_busy_number,pl->alive,avg_time);
+        fprintf(stderr,"--最近任务平均等待时间:%.4f(ms)\n",avg_time);
+
         // 线程池必须在运行，并且工作线程没有被挂起的情况下动态调整线程数目
         if(pl->state == running && threads_hold_on == 0 && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
         {

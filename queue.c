@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-16 16:06:07
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-21 21:25:40
+ * @LastEditTime: 2023-10-21 22:07:54
  * @FilePath: /threadpool.c/queue.c
  * @Description:
  *
@@ -107,8 +107,9 @@ void queue_destroy(queue *q)
 
 int queue_length(queue *q)
 {
+    int length = 0;
     pthread_mutex_lock(&(q->mutex));
-    int length = q->len;
+    length = q->len;
     pthread_mutex_unlock(&(q->mutex));
     return length;
 }
