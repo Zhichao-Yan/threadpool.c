@@ -200,6 +200,7 @@ void* Work(void* arg)
         pthread_testcancel(); // 取消点
     }
     pthread_cleanup_pop(0); // 弹出清理函数，参数为0，正常运行结束不会执行清理函数
+    // 线程池关闭时，工作线程结束退出
     pthread_mutex_lock(&cnt_lock);
     pl->alive--;
     pthread_mutex_unlock(&cnt_lock);
