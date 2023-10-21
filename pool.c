@@ -138,8 +138,8 @@ void pool_destroy(pool *pl)
     pl->state = shutdown;  // 把线程池状态置为shutdown关闭
     pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
-    err("结束管理线程.....\n");
     pthread_join(pl->admin,NULL); // 等待管理者线程结束
+    err("结束管理线程.....\n");
     free(pl); // 可以释放了pl了
     pl = NULL;
     err("《线程池正式关闭》\n");
