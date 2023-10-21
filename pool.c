@@ -7,7 +7,7 @@
 
 
 static volatile int threads_hold_on = 0; // 工作线程休眠控制量
-pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t cnt_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void sigal_register()
@@ -188,20 +188,21 @@ void* Work(void* arg)
         pl->ti = ck;
         pthread_mutex_unlock(&time_lock);
 
-        pthread_mutex_lock(&busy_lock);
+        pthread_mutex_lock(&cnt_lock);
         ++pl->busy;
-        pthread_mutex_unlock(&busy_lock);
+        pthread_mutex_unlock(&cnt_lock);
 
         execute_task(t);
 
-        pthread_mutex_lock(&busy_lock);
+        pthread_mutex_lock(&cnt_lock);
         --pl->busy;
-        pthread_mutex_unlock(&busy_lock);
+        pthread_mutex_unlock(&cnt_lock);
         pthread_testcancel(); // 取消点
     }
-   
     pthread_cleanup_pop(0); // 弹出清理函数，参数为0，正常运行结束不会执行清理函数
-
+    pthread_mutex_lock(&cnt_lock);
+    pl->alive--;
+    pthread_mutex_unlock(&cnt_lock);
     pthread_exit(NULL);
 }
 
@@ -240,9 +241,9 @@ void* Admin(void* arg)
         }
         // pl->alive 工作线程不需要知道有多少线程存在，管理线程知道即可
         // 因此不需要对alive互斥访问，只有管理线程知道alive
-        pthread_mutex_lock(&busy_lock);
+        pthread_mutex_lock(&cnt_lock);
         int current_busy_number = pl->busy; 
-        pthread_mutex_unlock(&busy_lock);
+        pthread_mutex_unlock(&cnt_lock);
         int avg_busy_number = get_avg_busy(current_busy_number); // 获得最近一段时间的平均的繁忙线程数
         busy_ratio =  (double)avg_busy_number/(pl->alive); // 求得最近的平均线程使用率，作为动态调整线程数量的依据
         fprintf(stderr,"--实时繁忙线程:%d/%d",current_busy_number,pl->alive);
