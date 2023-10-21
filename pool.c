@@ -134,14 +134,15 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
 }
 void pool_destroy(pool *pl)
 {
-    err("正在关闭线程池\n");
+    err("正在关闭线程池.....\n");
     pl->state = shutdown;  // 把线程池状态置为shutdown关闭
     pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
+    err("结束管理线程.....\n");
     pthread_join(pl->admin,NULL); // 等待管理者线程结束
     free(pl); // 可以释放了pl了
     pl = NULL;
-    err("线程池正式关闭!!\n");
+    err("《线程池正式关闭》\n");
     return;
 }
 void clean(void *arg)
@@ -338,6 +339,7 @@ void pool_queue_destroy(pool* pl)
     pl->q.state = -1; // 队列处于销毁状态
     pthread_cond_broadcast(&(pl->q).not_empty); // 通知那些因为队列为空而阻塞的工作线程醒过来
     queue_destroy(&(pl->q)); // 销毁队列
+    err("队列销毁完成...........\n");
     return;
 }
 
