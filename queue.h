@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-16 16:06:03
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-19 00:05:34
+ * @LastEditTime: 2023-10-21 21:27:40
  * @FilePath: /threadpool.c/queue.h
  * @Description:
  *
@@ -41,6 +41,6 @@ int queue_pull(queue *q, task *re);
 
 void queue_pause(queue *q);
 void queue_resume(queue *q);
-void queue_terminate(queue *q);
+void queue_wakeup_factory(queue *q);
 void queue_open_wait(queue *q);
 #endif

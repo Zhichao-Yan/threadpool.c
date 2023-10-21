@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-16 16:06:07
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 13:05:34
+ * @LastEditTime: 2023-10-21 21:25:40
  * @FilePath: /threadpool.c/queue.c
  * @Description:
  *
@@ -141,10 +141,13 @@ void queue_resume(queue *q)
     pthread_mutex_unlock(&q->mutex);
 }
 
-void queue_terminate(queue *q)
+void queue_wakeup_factory(queue *q)
 {
-    q->state = -1;                          // 队列停止使用
-    pthread_cond_broadcast(&q->state_cond); // 通知所有生产线程
+    if(q->state == 0) // 当q->state == 0，factory线程会阻塞在queue_open_wait中
+    {
+        q->state = 1;                          // 队列停止使用
+        pthread_cond_broadcast(&q->state_cond); // 通知所有生产线程      
+    }
 }
 
 void queue_open_wait(queue *q)

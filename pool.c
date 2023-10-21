@@ -134,12 +134,15 @@ pool* pool_init(int core_pool_size,int max_threads,int max_queue)
 }
 void pool_destroy(pool *pl)
 {
+    err("正在关闭线程池\n");
     pl->state = shutdown;  // 把线程池状态置为shutdown关闭
     pool_queue_destroy(pl); // 执行销毁队列的工作
     free(pl->worker); // 释放为工人线程分配的空间
     pthread_join(pl->admin,NULL); // 等待管理者线程结束
     free(pl); // 可以释放了pl了
     pl = NULL;
+    err("线程池正式关闭!!\n");
+    return;
 }
 void clean(void *arg)
 {
@@ -195,7 +198,7 @@ void* Work(void* arg)
         pthread_mutex_unlock(&busy_lock);
         pthread_testcancel(); // 取消点
     }
-    
+   
     pthread_cleanup_pop(0); // 弹出清理函数，参数为0，正常运行结束不会执行清理函数
 
     pthread_exit(NULL);
@@ -316,7 +319,7 @@ void pool_queue_resume(pool* pl)
 
 void pool_queue_destroy(pool* pl)
 {
-    queue_terminate(&(pl->q));
+    queue_wakeup_factory(&(pl->q));// 有必要的话唤醒阻塞在队列的工厂线程
     err("准备销毁队列...........\n");
     // 留时间让工作线程把剩余的任务处理完
     while(!queue_empty(&(pl->q))) // 队列不为空，等待工作线程把剩余任务取走然后完成
@@ -324,8 +327,8 @@ void pool_queue_destroy(pool* pl)
     // 队列为空，可能存在工作线程阻塞等待（队列为非空）的条件状态
     // 但是此时生产线程已经不再生产任务，队列不再可能非空，但是我们还是应该广播唤醒等待的工作线程
     // 队列的此时状态q.state = -1，利用它唤醒
-    pthread_cond_broadcast(&(pl->q).not_empty);
-
+    pl->q.state = -1; // 队列处于销毁状态
+    pthread_cond_broadcast(&(pl->q).not_empty); // 通知那些因为队列为空而阻塞的工作线程醒过来
     queue_destroy(&(pl->q)); // 销毁队列
     return;
 }
@@ -347,10 +350,9 @@ void pool_threads_hold(int signal)
 	}
 	return;
 }
-// 所有工作线程和管理线程休眠
+// 所有工作线程休眠
 void pool_threads_pause(pool* pl)
 {
-    // pthread_kill(pl->admin, SIGUSR1);
     fprintf(stderr,"工作线程挂起！开始睡眠\n");
 	for ( int i = 0; i < pl->max_threads; i++){
         if(pl->worker[i].state == 1)

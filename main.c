@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-19 21:39:23
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 17:41:08
+ * @LastEditTime: 2023-10-21 21:19:45
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * @QQ: 1594047159@qq.com
@@ -31,6 +31,8 @@ void* func(void* arg)
 void* Factory(void* arg) // 生产产品的厂家
 {
     char thread_name[] = "Factory";
+
+// for the use of debug,set a name to a thread when you are debug
 #if defined(__linux__)
 	/* Use prctl instead to prevent using _GNU_SOURCE flag and implicit declaration */
 	prctl(PR_SET_NAME, thread_name);
@@ -85,6 +87,6 @@ int main(int argc,char **argv)
     sleep(50);
     pool_queue_resume(pl);
     sleep(15);
-    pthread_join(pl->admin,NULL);
+    pool_destroy(pl);
     return 0;
 }
