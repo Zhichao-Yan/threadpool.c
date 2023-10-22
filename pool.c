@@ -228,7 +228,7 @@ void* Admin(void* arg)
     pool *pl = (pool*)arg;
     while(pl->state == running)
     {
-        sleep(rand()%10); // 休息随机时间后抽查运行状况
+        //sleep(rand()%5); // 休息随机时间后抽查运行状况
         fprintf(stderr,"线程池状态:\n");
         if(pl->q.state >= 0)
         {
