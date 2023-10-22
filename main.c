@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-19 21:39:23
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-22 08:38:36
+ * @LastEditTime: 2023-10-22 09:24:57
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * @QQ: 1594047159@qq.com
@@ -82,7 +82,7 @@ int main(int argc,char **argv)
     pool_threads_pause();
     sleep(15);
     pool_threads_resume();
-    sleep(30);
+    sleep(2);
     pool_queue_pause(pl);
     sleep(15);
     pool_queue_resume(pl);

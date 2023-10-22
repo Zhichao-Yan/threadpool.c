@@ -198,7 +198,7 @@ void* Work(void* arg)
         pthread_mutex_lock(&cnt_lock);
         --pl->busy;
         pthread_mutex_unlock(&cnt_lock);
-        while(threads_hold_on == 1)
+        while(threads_hold_on == 1) // 看情况休眠
         {
             sleep(1);
         }
@@ -261,7 +261,7 @@ void* Admin(void* arg)
         fprintf(stderr,"--最近任务平均等待时间:%.4f(ms)\n",avg_time);
 
         // 线程池必须在运行，并且工作线程没有被挂起的情况下动态调整线程数目
-        if(pl->state == running && threads_hold_on == 0 && busy_ratio <= 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
+        if(pl->state == running && threads_hold_on == 0 && busy_ratio < 0.5 && pl->alive > MIN_THREADS) // 取消部分线程
         {
             int cancel = 0; // 打算取消的线程
             if(MIN_THREADS >= pl->alive * 0.5) // 如果最小线程数大于当前线程数的0.5，取消到只有最小那么多
