@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-20 15:07:33
+ * @LastEditTime: 2023-10-22 08:11:45
  * @FilePath: /threadpool.c/pool.h
  * @Description: 
  * 
@@ -51,7 +51,7 @@ typedef struct pool_t{
 
     // 监控数据
     int state; // 线程池状态
-    int alive;
+    int alive; 
     int busy;
     double ti; // current task wait time 
 }pool;
