@@ -9,7 +9,7 @@
 static volatile int threads_hold_on = 0; // 工作线程休眠控制量
 pthread_mutex_t cnt_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
-
+/*
 void sigal_register()
 {
     struct sigaction act; // 数据结构struct sigaction
@@ -27,6 +27,7 @@ void sigal_register()
 	}
     return;
 }
+*/
 
 static double get_avg_time(double ck)
 {
@@ -158,7 +159,7 @@ void clean(void *arg)
 }
 void* Work(void* arg)
 {
-    sigal_register(); // 注册信号
+    //sigal_register(); // 注册信号
 
     char thread_name[] = "Work";
 #if defined(__linux__)
@@ -197,6 +198,10 @@ void* Work(void* arg)
         pthread_mutex_lock(&cnt_lock);
         --pl->busy;
         pthread_mutex_unlock(&cnt_lock);
+        while(threads_hold_on == 1)
+        {
+            sleep(1);
+        }
         pthread_testcancel(); // 取消点
     }
     // 线程池关闭时，工作线程结束后自动退出
@@ -345,12 +350,25 @@ void pool_queue_destroy(pool* pl)
     return;
 }
 
+void pool_threads_pause()
+{
+    threads_hold_on = 1;
+    fprintf(stderr,"工作线程挂起！开始睡眠\n");
+}
+// 所有线程重新醒过来
+void pool_threads_resume() 
+{
+    threads_hold_on = 0; 
+    fprintf(stderr,"工作线程醒来！开始工作\n");
+}
+
 
 /**
  * @description:信号处理函数 
  * @param {int} signal
  * @return {void}
  */
+/*
 void pool_threads_hold(int signal) 
 {
     if(signal == SIGUSR1)
@@ -363,6 +381,7 @@ void pool_threads_hold(int signal)
 	return;
 }
 // 所有工作线程休眠
+
 void pool_threads_pause(pool* pl)
 {
     fprintf(stderr,"工作线程挂起！开始睡眠\n");
@@ -371,11 +390,7 @@ void pool_threads_pause(pool* pl)
 		    pthread_kill(pl->worker[i].tid, SIGUSR1);
 	}
 }
-// 所有线程重新醒过来
-void pool_threads_resume() 
-{
-    threads_hold_on = 0; 
-    fprintf(stderr,"工作线程醒来！开始工作\n");
-}
+*/
+
 
 

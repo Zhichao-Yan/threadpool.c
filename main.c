@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-19 21:39:23
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-21 21:19:45
+ * @LastEditTime: 2023-10-22 08:38:36
  * @FilePath: /threadpool.c/main.c
  * @Description: 
  * @QQ: 1594047159@qq.com
@@ -79,7 +79,7 @@ int main(int argc,char **argv)
         pthread_create(&tid[i],NULL,Factory,pl);
     }
     sleep(30);
-    pool_threads_pause(pl);
+    pool_threads_pause();
     sleep(15);
     pool_threads_resume();
     sleep(30);

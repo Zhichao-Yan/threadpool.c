@@ -2,7 +2,7 @@
  * @Author: yan yzc53@icloud.com
  * @Date: 2023-10-17 19:42:57
  * @LastEditors: yan yzc53@icloud.com
- * @LastEditTime: 2023-10-22 08:11:45
+ * @LastEditTime: 2023-10-22 08:37:48
  * @FilePath: /threadpool.c/pool.h
  * @Description: 
  * 
@@ -63,7 +63,7 @@ void* Work(void* arg);
 void Produce(pool *pl,task t);
 
 void pool_threads_hold(int signal);
-void pool_threads_pause(pool* pl);
+void pool_threads_pause();
 void pool_threads_resume();
 
 void pool_queue_pause(pool* pl);
